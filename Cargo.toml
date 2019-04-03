@@ -5,4 +5,5 @@ authors = ["Yota Toyama <raviqqe@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+coroutine = "0.8"
 tokio = { version = "0.1.16", features = ["async-await-preview"] }

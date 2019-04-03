@@ -1,11 +1,13 @@
 #![feature(async_await, await_macro, futures_api)]
 
+extern crate coroutine;
 extern crate tokio;
 
+use coroutine::asymmetric::Coroutine;
 use tokio::prelude::*;
 
 fn main() {
-    future_in_thread_in_future();
+    coroutine();
 }
 
 // success
@@ -34,4 +36,38 @@ fn future_in_thread_in_future() {
         handle.join().unwrap();
         Ok(())
     }));
+}
+
+// success
+#[allow(unused)]
+fn print_in_spawn_async() {
+    let handle = std::thread::spawn(|| {
+        tokio::run_async(async move {
+            tokio::spawn_async(async move {
+                println!("Hello, coroutine!");
+            });
+        });
+    });
+
+    handle.join().unwrap();
+}
+
+// success
+#[allow(unused)]
+fn coroutine() {
+    let handle = std::thread::spawn(|| {
+        tokio::run_async(async move {
+            tokio::spawn_async(async move {
+                let mut handle = Coroutine::spawn(|c, _| {
+                    tokio::spawn_async(async move {
+                        println!("Hello, coroutine!");
+                    });
+                    42
+                });
+                println!("{:?}", handle.resume(0));
+            })
+        });
+    });
+
+    handle.join().unwrap();
 }
