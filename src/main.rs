@@ -7,7 +7,7 @@ use coroutine::asymmetric::Coroutine;
 use tokio::prelude::*;
 
 fn main() {
-    coroutine();
+    parked_coroutine();
 }
 
 // success
@@ -63,6 +63,38 @@ fn coroutine() {
                 });
                 42
             });
+            println!("{:?}", handle.resume(0));
+        });
+    });
+
+    handle.join().unwrap();
+}
+
+// illegal hardware instruction
+#[allow(unused)]
+fn undone_coroutine() {
+    let mut handle = Coroutine::spawn(|c, _| {
+        c.yield_with(0);
+        42
+    });
+
+    println!("{:?}", handle.resume(0));
+}
+
+// success
+#[allow(unused)]
+fn parked_coroutine() {
+    let handle = std::thread::spawn(|| {
+        tokio::run_async(async move {
+            let mut handle = Coroutine::spawn(|c, _| {
+                tokio::spawn_async(async move {
+                    println!("Hello, coroutine!");
+                });
+                c.park_with(0);
+                42
+            });
+
+            println!("{:?}", handle.resume(0));
             println!("{:?}", handle.resume(0));
         });
     });
