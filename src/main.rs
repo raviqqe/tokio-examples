@@ -7,7 +7,7 @@ use coroutine::asymmetric::Coroutine;
 use tokio::prelude::*;
 
 fn main() {
-    awaited_future_in_coroutine();
+    awaited_future();
 }
 
 // success
@@ -117,7 +117,10 @@ fn awaited_future_in_coroutine() {
                 });
                 c.park_with(0);
 
-                while (!mutex.lock().unwrap().get()) {}
+                while (!mutex.lock().unwrap().get()) {
+                    std::thread::sleep(std::time::Duration::from_millis(1000));
+                    println!("waiting...");
+                }
 
                 42
             });
@@ -128,4 +131,23 @@ fn awaited_future_in_coroutine() {
     });
 
     handle.join().unwrap();
+}
+
+// stall
+#[allow(unused)]
+fn awaited_future() {
+    tokio::run_async(async move {
+        let mutex = std::sync::Arc::new(std::sync::Mutex::new(std::cell::Cell::new(false)));
+        let cloned = mutex.clone();
+
+        tokio::spawn_async(async move {
+            println!("Hello, coroutine!");
+            *cloned.lock().unwrap().get_mut() = true;
+        });
+
+        while (!mutex.lock().unwrap().get()) {
+            std::thread::sleep(std::time::Duration::from_millis(1000));
+            println!("waiting...");
+        }
+    });
 }
