@@ -57,15 +57,13 @@ fn print_in_spawn_async() {
 fn coroutine() {
     let handle = std::thread::spawn(|| {
         tokio::run_async(async move {
-            tokio::spawn_async(async move {
-                let mut handle = Coroutine::spawn(|c, _| {
-                    tokio::spawn_async(async move {
-                        println!("Hello, coroutine!");
-                    });
-                    42
+            let mut handle = Coroutine::spawn(|c, _| {
+                tokio::spawn_async(async move {
+                    println!("Hello, coroutine!");
                 });
-                println!("{:?}", handle.resume(0));
-            })
+                42
+            });
+            println!("{:?}", handle.resume(0));
         });
     });
 
