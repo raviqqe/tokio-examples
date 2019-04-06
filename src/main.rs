@@ -7,7 +7,7 @@ use coroutine::asymmetric::Coroutine;
 use tokio::prelude::*;
 
 fn main() {
-    coroutine_with_multi_therads();
+    awaited_future_in_coroutine();
 }
 
 // success
@@ -102,20 +102,23 @@ fn parked_coroutine() {
     handle.join().unwrap();
 }
 
-// success
+// stall
 #[allow(unused)]
-fn coroutine_with_multi_therads() {
-    let handle1 = std::thread::spawn(|| {
-        tokio::run_async(async move { std::thread::sleep(std::time::Duration::from_millis(3000)) });
-    });
-
-    let handle2 = std::thread::spawn(|| {
+fn awaited_future_in_coroutine() {
+    let handle = std::thread::spawn(|| {
         tokio::run_async(async move {
             let mut handle = Coroutine::spawn(|c, _| {
+                let mutex = std::sync::Arc::new(std::sync::Mutex::new(std::cell::Cell::new(false)));
+                let cloned = mutex.clone();
+
                 tokio::spawn_async(async move {
                     println!("Hello, coroutine!");
+                    *cloned.lock().unwrap().get_mut() = true;
                 });
                 c.park_with(0);
+
+                while (!mutex.lock().unwrap().get()) {}
+
                 42
             });
 
@@ -124,6 +127,5 @@ fn coroutine_with_multi_therads() {
         });
     });
 
-    handle2.join().unwrap();
-    handle1.join().unwrap();
+    handle.join().unwrap();
 }
