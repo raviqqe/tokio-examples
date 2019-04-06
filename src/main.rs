@@ -1,6 +1,7 @@
 #![feature(async_await, await_macro, futures_api)]
 
 extern crate coroutine;
+#[macro_use]
 extern crate tokio;
 
 use coroutine::asymmetric::Coroutine;
@@ -133,7 +134,7 @@ fn awaited_future_in_coroutine() {
     handle.join().unwrap();
 }
 
-// stall
+// success
 #[allow(unused)]
 fn awaited_future() {
     tokio::run_async(async move {
@@ -144,6 +145,10 @@ fn awaited_future() {
             println!("Hello, coroutine!");
             *cloned.lock().unwrap().get_mut() = true;
         });
+
+        await!(tokio::timer::Delay::new(
+            std::time::Instant::now() + std::time::Duration::from_millis(100),
+        ));
 
         while (!mutex.lock().unwrap().get()) {
             std::thread::sleep(std::time::Duration::from_millis(1000));
